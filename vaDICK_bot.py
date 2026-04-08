@@ -19,49 +19,38 @@ buttons = ReplyKeyboardMarkup([
 JOKES = [
     "Идёт медведь по лесу, видит - машина горит. Сел в неё и сгорел!",
     "Встречаются два программиста: - Ты знаешь, я вчера всю ночь код писал. - И что? - Ничего, не скомпилировалось...",
-    "Колобок повесился. Шерлок Холмс думает: 'Вот это поворот!'",
 ]
-
-# Московское время (UTC+3)
-def get_moscow_time():
-    return datetime.datetime.utcnow() + datetime.timedelta(hours=3)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привет! Я Вадик - твой помощник.\n\n"
-        "Просто пиши мне как другу, или нажимай кнопки.\n"
-        "Я понимаю:\n"
-        "- привет, как дела, что делаешь\n"
-        "- кто ты, спасибо, пока\n"
-        "- примеры (2+2, 10/3)\n\n"
-        "Начни прямо сейчас!",
+        "Просто пиши мне, или нажимай кнопки.\n"
+        "Я понимаю: привет, как дела, примеры (2+2), анекдоты, время, дату.",
         reply_markup=buttons
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🤖 Что я умею:\n\n"
-        "📝 Считать примеры (2+2, 10/3, 7*8)\n"
-        "😂 Рассказывать анекдоты\n"
-        "🕐 Показывать время и дату (по Москве)\n\n"
-        "А ещё я понимаю:\n"
-        "- Привет, как дела, что делаешь\n"
-        "- Кто ты, спасибо, пока\n\n"
-        "Просто напиши мне что-нибудь!",
+        "Что я умею:\n"
+        "- Считать примеры (2+2)\n"
+        "- Рассказывать анекдоты\n"
+        "- Показывать время и дату (МСК)\n"
+        "- Отвечать на привет, как дела, пока\n\n"
+        "Просто напиши что-нибудь!",
         reply_markup=buttons
     )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     
-    # Обработка кнопок
+    # Кнопки
     if text == "🕐 Время":
-        now = get_moscow_time()
-        await update.message.reply_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')} (МСК)", reply_markup=buttons)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+        await update.message.reply_text(f"🕐 {now.strftime('%H:%M:%S')} (МСК)", reply_markup=buttons)
         return
     elif text == "📅 Дата":
-        now = get_moscow_time()
-        await update.message.reply_text(f"📅 Сегодня {now.strftime('%d.%m.%Y')}", reply_markup=buttons)
+        now = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+        await update.message.reply_text(f"📅 {now.strftime('%d.%m.%Y')}", reply_markup=buttons)
         return
     elif text == "😂 Анекдот":
         await update.message.reply_text(random.choice(JOKES), reply_markup=buttons)
@@ -74,36 +63,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if re.search(r'[\d\+\-\*/\(\)]', text):
         try:
             result = eval(text)
-            await update.message.reply_text(f"🧮 Результат: {result}", reply_markup=buttons)
+            await update.message.reply_text(f"🧮 {result}", reply_markup=buttons)
             return
         except:
             pass
     
-    # Нормальное общение
-    text_lower = text.lower()
-    
-    if "привет" in text_lower or "здравствуй" in text_lower:
-        answer = "Привет! Как дела? 😊"
-    elif "как дела" in text_lower:
-        answer = "Отлично! А у тебя как? 😎"
-    elif "что делаешь" in text_lower or "чем занят" in text_lower:
-        answer = "Общаюсь с тобой! А ты что делаешь? 🤔"
-    elif "кто ты" in text_lower or "как тебя зовут" in text_lower:
-        answer = "Я Вадик - твой виртуальный помощник! 🤖"
-    elif "спасибо" in text_lower:
-        answer = "Пожалуйста! Всегда рад помочь 😊"
-    elif "пока" in text_lower or "до свидания" in text_lower:
-        answer = "До встречи! Буду ждать 👋"
-    elif "молодец" in text_lower or "умница" in text_lower:
-        answer = "Спасибо! Я стараюсь быть полезным 😊"
-    elif "погода" in text_lower:
-        answer = "Пока я не умею показывать погоду, но скоро научусь! 🌤"
-    elif "имя" in text_lower:
-        answer = "Тебя зовут как-то особенно? Расскажи! 📝"
+    # Обычное общение
+    low = text.lower()
+    if "привет" in low:
+        await update.message.reply_text("Привет! Как дела? 😊", reply_markup=buttons)
+    elif "как дела" in low:
+        await update.message.reply_text("Отлично! А у тебя? 😎", reply_markup=buttons)
+    elif "что делаешь" in low:
+        await update.message.reply_text("Общаюсь с тобой! 🤔", reply_markup=buttons)
+    elif "кто ты" in low:
+        await update.message.reply_text("Я Вадик - помощник! 🤖", reply_markup=buttons)
+    elif "спасибо" in low:
+        await update.message.reply_text("Пожалуйста! 😊", reply_markup=buttons)
+    elif "пока" in low:
+        await update.message.reply_text("До встречи! 👋", reply_markup=buttons)
     else:
-        answer = f"Интересно... Расскажи подробнее! (Ты написал: {text})"
-    
-    await update.message.reply_text(answer, reply_markup=buttons)
+        await update.message.reply_text(f"Ты написал: {text}", reply_markup=buttons)
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -112,7 +92,7 @@ def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("✅ Бот Вадик запущен (московское время)")
+    print("✅ Бот запущен")
     app.run_polling()
 
 if __name__ == "__main__":
