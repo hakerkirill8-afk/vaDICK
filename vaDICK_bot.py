@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 TOKEN = "8320879063:AAGhsHV--H_2u9qdJ3E87gUUNt5qElJ0GQs"
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 # Кнопки
 buttons = ReplyKeyboardMarkup([
@@ -15,23 +15,29 @@ buttons = ReplyKeyboardMarkup([
     ["😂 Анекдот", "❓ Помощь"]
 ], resize_keyboard=True)
 
+# Анекдоты
 JOKES = [
     "Идёт медведь по лесу, видит - машина горит. Сел в неё и сгорел!",
     "Встречаются два программиста: - Ты знаешь, я вчера всю ночь код писал. - И что? - Ничего, не скомпилировалось...",
-    "Колобок повесился. Шерлок Холмс думает: \"Вот это поворот!\"",
+    "Колобок повесился. Шерлок Холмс думает: 'Вот это поворот!'",
 ]
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привет! Я Вадик - твой помощник.\n\n"
-        "Можешь просто писать мне, как другу, или нажимать на кнопки.",
+        "Просто пиши мне как другу, или нажимай кнопки.\n"
+        "Я понимаю:\n"
+        "- привет, как дела, что делаешь\n"
+        "- кто ты, спасибо, пока\n"
+        "- примеры (2+2, 10/3)\n\n"
+        "Начни прямо сейчас!",
         reply_markup=buttons
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🤖 Что я умею:\n\n"
-        "📝 Считать примеры (2+2, 10/3)\n"
+        "📝 Считать примеры (2+2, 10/3, 7*8)\n"
         "😂 Рассказывать анекдоты\n"
         "🕐 Показывать время и дату\n\n"
         "А ещё я понимаю:\n"
@@ -44,7 +50,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     
-    # Кнопки
+    # Обработка кнопок
     if text == "🕐 Время":
         now = datetime.datetime.now()
         await update.message.reply_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')}", reply_markup=buttons)
@@ -78,18 +84,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         answer = "Отлично! А у тебя как? 😎"
     elif "что делаешь" in text_lower or "чем занят" in text_lower:
         answer = "Общаюсь с тобой! А ты что делаешь? 🤔"
-    elif "кто ты" in text_lower:
+    elif "кто ты" in text_lower or "как тебя зовут" in text_lower:
         answer = "Я Вадик - твой виртуальный помощник! 🤖"
-    elif "твоё имя" in text_lower or "как тебя зовут" in text_lower:
-        answer = "Меня зовут Вадик! Приятно познакомиться! 🤝"
     elif "спасибо" in text_lower:
         answer = "Пожалуйста! Всегда рад помочь 😊"
     elif "пока" in text_lower or "до свидания" in text_lower:
-        answer = "До встречи! Буду ждать твоих сообщений 👋"
+        answer = "До встречи! Буду ждать 👋"
     elif "молодец" in text_lower or "умница" in text_lower:
         answer = "Спасибо! Я стараюсь быть полезным 😊"
+    elif "погода" in text_lower:
+        answer = "Пока я не умею показывать погоду, но скоро научусь! 🌤"
+    elif "имя" in text_lower:
+        answer = "Тебя зовут как-то особенно? Расскажи! 📝"
     else:
-        answer = f"Интересно... Расскажи подробнее. (Ты написал: {text})"
+        answer = f"Интересно... Расскажи подробнее! (Ты написал: {text})"
     
     await update.message.reply_text(answer, reply_markup=buttons)
 
@@ -100,7 +108,7 @@ def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("Бот Вадик запущен!")
+    print("✅ Бот Вадик запущен!")
     app.run_polling()
 
 if __name__ == "__main__":
