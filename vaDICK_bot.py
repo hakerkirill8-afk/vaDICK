@@ -9,66 +9,96 @@ TOKEN = "8320879063:AAGhsHV--H_2u9qdJ3E87gUUNt5qElJ0GQs"
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+# Кнопки
+buttons = ReplyKeyboardMarkup([
+    ["🕐 Время", "📅 Дата"],
+    ["😂 Анекдот", "❓ Помощь"]
+], resize_keyboard=True)
+
 JOKES = [
     "Идёт медведь по лесу, видит - машина горит. Сел в неё и сгорел!",
     "Встречаются два программиста: - Ты знаешь, я вчера всю ночь код писал. - И что? - Ничего, не скомпилировалось...",
+    "Колобок повесился. Шерлок Холмс думает: \"Вот это поворот!\"",
 ]
-
-# Клавиатура с кнопками
-menu_keyboard = ReplyKeyboardMarkup([
-    [KeyboardButton("🕐 Время"), KeyboardButton("📅 Дата")],
-    [KeyboardButton("😂 Анекдот"), KeyboardButton("❓ Помощь")],
-    [KeyboardButton("👋 Пока")]
-], resize_keyboard=True)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Привет! Я Вадик. Выбери действие:",
-        reply_markup=menu_keyboard
+        "Привет! Я Вадик - твой помощник.\n\n"
+        "Можешь просто писать мне, как другу, или нажимать на кнопки.",
+        reply_markup=buttons
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Я умею:\n"
-        "- Считать примеры (2+2)\n"
-        "- Показывать время и дату\n"
-        "- Рассказывать анекдоты\n\n"
-        "Просто нажми на кнопку!",
-        reply_markup=menu_keyboard
+        "🤖 Что я умею:\n\n"
+        "📝 Считать примеры (2+2, 10/3)\n"
+        "😂 Рассказывать анекдоты\n"
+        "🕐 Показывать время и дату\n\n"
+        "А ещё я понимаю:\n"
+        "- Привет, как дела, что делаешь\n"
+        "- Кто ты, спасибо, пока\n\n"
+        "Просто напиши мне что-нибудь!",
+        reply_markup=buttons
     )
 
-async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     
+    # Кнопки
     if text == "🕐 Время":
         now = datetime.datetime.now()
-        await update.message.reply_text(f"Сейчас {now.strftime('%H:%M:%S')}", reply_markup=menu_keyboard)
+        await update.message.reply_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')}", reply_markup=buttons)
+        return
     elif text == "📅 Дата":
         now = datetime.datetime.now()
-        await update.message.reply_text(f"Сегодня {now.strftime('%d.%m.%Y')}", reply_markup=menu_keyboard)
+        await update.message.reply_text(f"📅 Сегодня {now.strftime('%d.%m.%Y')}", reply_markup=buttons)
+        return
     elif text == "😂 Анекдот":
-        await update.message.reply_text(random.choice(JOKES), reply_markup=menu_keyboard)
+        await update.message.reply_text(random.choice(JOKES), reply_markup=buttons)
+        return
     elif text == "❓ Помощь":
         await help_command(update, context)
-    elif text == "👋 Пока":
-        await update.message.reply_text("До встречи! Напиши /start чтобы вернуться", reply_markup=menu_keyboard)
+        return
+    
+    # Математика
+    if re.search(r'[\d\+\-\*/\(\)]', text):
+        try:
+            result = eval(text)
+            await update.message.reply_text(f"🧮 Результат: {result}", reply_markup=buttons)
+            return
+        except:
+            pass
+    
+    # Нормальное общение
+    text_lower = text.lower()
+    
+    if "привет" in text_lower or "здравствуй" in text_lower:
+        answer = "Привет! Как дела? 😊"
+    elif "как дела" in text_lower:
+        answer = "Отлично! А у тебя как? 😎"
+    elif "что делаешь" in text_lower or "чем занят" in text_lower:
+        answer = "Общаюсь с тобой! А ты что делаешь? 🤔"
+    elif "кто ты" in text_lower:
+        answer = "Я Вадик - твой виртуальный помощник! 🤖"
+    elif "твоё имя" in text_lower or "как тебя зовут" in text_lower:
+        answer = "Меня зовут Вадик! Приятно познакомиться! 🤝"
+    elif "спасибо" in text_lower:
+        answer = "Пожалуйста! Всегда рад помочь 😊"
+    elif "пока" in text_lower or "до свидания" in text_lower:
+        answer = "До встречи! Буду ждать твоих сообщений 👋"
+    elif "молодец" in text_lower or "умница" in text_lower:
+        answer = "Спасибо! Я стараюсь быть полезным 😊"
     else:
-        # Обычный текст — считаем примеры или просто отвечаем
-        if re.search(r'[\d\+\-\*/\(\)]', text):
-            try:
-                result = eval(text)
-                await update.message.reply_text(f"Результат: {result}", reply_markup=menu_keyboard)
-                return
-            except:
-                pass
-        await update.message.reply_text(f"Ты написал: {text}", reply_markup=menu_keyboard)
+        answer = f"Интересно... Расскажи подробнее. (Ты написал: {text})"
+    
+    await update.message.reply_text(answer, reply_markup=buttons)
 
 def main():
     app = Application.builder().token(TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buttons))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Бот Вадик запущен!")
     app.run_polling()
