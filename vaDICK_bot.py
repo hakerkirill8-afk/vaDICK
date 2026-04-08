@@ -22,6 +22,10 @@ JOKES = [
     "Колобок повесился. Шерлок Холмс думает: 'Вот это поворот!'",
 ]
 
+# Московское время (UTC+3)
+def get_moscow_time():
+    return datetime.datetime.utcnow() + datetime.timedelta(hours=3)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привет! Я Вадик - твой помощник.\n\n"
@@ -39,7 +43,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🤖 Что я умею:\n\n"
         "📝 Считать примеры (2+2, 10/3, 7*8)\n"
         "😂 Рассказывать анекдоты\n"
-        "🕐 Показывать время и дату\n\n"
+        "🕐 Показывать время и дату (по Москве)\n\n"
         "А ещё я понимаю:\n"
         "- Привет, как дела, что делаешь\n"
         "- Кто ты, спасибо, пока\n\n"
@@ -52,11 +56,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Обработка кнопок
     if text == "🕐 Время":
-        now = datetime.datetime.now()
-        await update.message.reply_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')}", reply_markup=buttons)
+        now = get_moscow_time()
+        await update.message.reply_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')} (МСК)", reply_markup=buttons)
         return
     elif text == "📅 Дата":
-        now = datetime.datetime.now()
+        now = get_moscow_time()
         await update.message.reply_text(f"📅 Сегодня {now.strftime('%d.%m.%Y')}", reply_markup=buttons)
         return
     elif text == "😂 Анекдот":
@@ -108,7 +112,7 @@ def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("✅ Бот Вадик запущен!")
+    print("✅ Бот Вадик запущен (московское время)")
     app.run_polling()
 
 if __name__ == "__main__":
