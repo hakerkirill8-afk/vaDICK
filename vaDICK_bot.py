@@ -2,8 +2,8 @@ import logging
 import re
 import random
 import datetime
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 TOKEN = "8320879063:AAGhsHV--H_2u9qdJ3E87gUUNt5qElJ0GQs"
 
@@ -15,102 +15,147 @@ JOKES = [
     "Колобок повесился. Шерлок Холмс думает: \"Вот это поворот!\"",
 ]
 
-# Кнопки
-buttons = ReplyKeyboardMarkup([
-    [KeyboardButton("🕐 Время"), KeyboardButton("📅 Дата")],
-    [KeyboardButton("😂 Анекдот"), KeyboardButton("🌤 Погода")],
-    [KeyboardButton("❓ Помощь"), KeyboardButton("👋 Пока")]
-], resize_keyboard=True)
+# Инлайн-кнопки
+keyboard = [
+    [InlineKeyboardButton("🕐 Время", callback_data="time")],
+    [InlineKeyboardButton("📅 Дата", callback_data="date")],
+    [InlineKeyboardButton("😂 Анекдот", callback_data="joke")],
+    [InlineKeyboardButton("🌤 Погода", callback_data="weather")],
+    [InlineKeyboardButton("❓ Помощь", callback_data="help")],
+    [InlineKeyboardButton("👋 Пока", callback_data="bye")]
+]
+reply_markup = InlineKeyboardMarkup(keyboard)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await update.message.reply_text(
         f"Привет, {user.first_name}! Я Вадик - твой помощник.\n\n"
-        "Нажми на кнопку или напиши команду:",
-        reply_markup=buttons
+        "Выбери действие:",
+        reply_markup=reply_markup
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🤖 Что я умею:\n\n"
         "📝 Считать примеры: 2+2, 10/3, 7*8\n"
-        "😂 Анекдоты — кнопка или /анекдот\n"
-        "🕐 Время и дата — кнопка или /время\n"
-        "🌤 Погода — кнопка или /погода Москва\n\n"
-        "Просто напиши мне что-нибудь!",
-        reply_markup=buttons
+        "😂 Анекдоты\n"
+        "🕐 Время и дата\n"
+        "🌤 Погода (например: погода Москва)\n\n"
+        "Выбери действие на кнопках ниже 👇",
+        reply_markup=reply_markup
     )
 
 async def joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(random.choice(JOKES), reply_markup=buttons)
+    query = update.callback_query
+    if query:
+        await query.answer()
+        await query.edit_message_text(random.choice(JOKES), reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(random.choice(JOKES), reply_markup=reply_markup)
 
 async def show_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.datetime.now()
-    await update.message.reply_text(
-        f"🕐 Сейчас {now.strftime('%H:%M:%S')}\n📅 Сегодня {now.strftime('%d.%m.%Y')}",
-        reply_markup=buttons
-    )
+    text = f"🕐 Сейчас {now.strftime('%H:%M:%S')}"
+    if hasattr(update, 'callback_query'):
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def show_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.datetime.now()
-    await update.message.reply_text(
-        f"📅 Сегодня {now.strftime('%d.%m.%Y')}",
-        reply_markup=buttons
-    )
+    text = f"📅 Сегодня {now.strftime('%d.%m.%Y')}"
+    if hasattr(update, 'callback_query'):
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text(
-            "🌍 Напиши город: /погода Москва\nИли: погода Питер",
-            reply_markup=buttons
+    if hasattr(update, 'callback_query'):
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(
+            "🌍 Напиши город: /погода Москва\nНапример: погода Питер",
+            reply_markup=reply_markup
         )
-        return
-    city = " ".join(context.args)
-    await update.message.reply_text(
-        f"🌤 Погода в {city}: +5°C, облачно",
-        reply_markup=buttons
-    )
+    else:
+        if not context.args:
+            await update.message.reply_text(
+                "🌍 Напиши город: /погода Москва",
+                reply_markup=reply_markup
+            )
+            return
+        city = " ".join(context.args)
+        await update.message.reply_text(
+            f"🌤 Погода в {city}: +5°C, облачно",
+            reply_markup=reply_markup
+        )
 
 async def bye(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 До встречи! Буду ждать твоих сообщений!",
-        reply_markup=buttons
-    )
+    if hasattr(update, 'callback_query'):
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(
+            "👋 До встречи! Напиши /start чтобы вернуться",
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(
+            "👋 До встречи! Напиши /start чтобы вернуться",
+            reply_markup=reply_markup
+        )
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "time":
+        now = datetime.datetime.now()
+        await query.edit_message_text(f"🕐 Сейчас {now.strftime('%H:%M:%S')}", reply_markup=reply_markup)
+    elif query.data == "date":
+        now = datetime.datetime.now()
+        await query.edit_message_text(f"📅 Сегодня {now.strftime('%d.%m.%Y')}", reply_markup=reply_markup)
+    elif query.data == "joke":
+        await query.edit_message_text(random.choice(JOKES), reply_markup=reply_markup)
+    elif query.data == "weather":
+        await query.edit_message_text(
+            "🌍 Напиши город: /погода Москва\nНапример: погода Питер",
+            reply_markup=reply_markup
+        )
+    elif query.data == "help":
+        await query.edit_message_text(
+            "🤖 Что я умею:\n\n"
+            "📝 Считать примеры: 2+2, 10/3, 7*8\n"
+            "😂 Анекдоты\n"
+            "🕐 Время и дата\n"
+            "🌤 Погода (например: погода Москва)\n\n"
+            "Выбери действие на кнопках ниже 👇",
+            reply_markup=reply_markup
+        )
+    elif query.data == "bye":
+        await query.edit_message_text(
+            "👋 До встречи! Напиши /start чтобы вернуться",
+            reply_markup=reply_markup
+        )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    
-    # Обработка кнопок
-    if text == "🕐 Время":
-        await show_time(update, context)
-        return
-    elif text == "📅 Дата":
-        await show_date(update, context)
-        return
-    elif text == "😂 Анекдот":
-        await joke(update, context)
-        return
-    elif text == "🌤 Погода":
-        await update.message.reply_text(
-            "🌍 Напиши город: /погода Москва",
-            reply_markup=buttons
-        )
-        return
-    elif text == "❓ Помощь":
-        await help_command(update, context)
-        return
-    elif text == "👋 Пока":
-        await bye(update, context)
-        return
     
     # Математика
     if re.search(r'[\d\+\-\*/\(\)]', text):
         try:
             result = eval(text)
-            await update.message.reply_text(f"🧮 Результат: {result}", reply_markup=buttons)
+            await update.message.reply_text(f"🧮 Результат: {result}", reply_markup=reply_markup)
             return
         except:
             pass
+    
+    # Погода через текст
+    if "погода" in text.lower():
+        parts = text.lower().split()
+        if len(parts) > 1:
+            city = " ".join(parts[1:])
+            await update.message.reply_text(f"🌤 Погода в {city}: +5°C, облачно", reply_markup=reply_markup)
+            return
     
     # Простые ответы
     text_lower = text.lower()
@@ -123,11 +168,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "спасибо" in text_lower:
         answer = "Пожалуйста! Всегда рад помочь 😊"
     elif "пока" in text_lower:
-        answer = "До встречи! Буду ждать 👋"
+        answer = "До встречи! Напиши /start чтобы вернуться 👋"
     else:
-        answer = f"Ты сказал: {text}"
+        answer = f"Ты сказал: {text}\n\nВыбери действие на кнопках ниже 👇"
     
-    await update.message.reply_text(answer, reply_markup=buttons)
+    await update.message.reply_text(answer, reply_markup=reply_markup)
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -145,6 +190,9 @@ def main():
     app.add_handler(CommandHandler("погода", weather))
     app.add_handler(CommandHandler("bye", bye))
     app.add_handler(CommandHandler("пока", bye))
+    
+    # Кнопки
+    app.add_handler(CallbackQueryHandler(button_handler))
     
     # Сообщения
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
